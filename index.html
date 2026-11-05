@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestión de Inventario</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    margin: 0;
+    padding: 25px;
+    color: #1e293b;
+}
+.container {
+    max-width: 950px;
+    margin: auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+}
+h1 { color: #164e63; }
+.formulario {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+input, button {
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 15px;
+}
+button {
+    background: #0e7490;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover { background: #155e75; }
+.mensaje { margin: 15px 0; font-weight: bold; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+th, td {
+    border: 1px solid #cbd5e1;
+    padding: 11px;
+    text-align: left;
+}
+th { background: #e0f2fe; }
+.busqueda { width: 95%; margin-top: 25px; }
+@media(max-width:650px) {
+    .formulario { grid-template-columns: 1fr; }
+    body { padding: 10px; }
+    .container { padding: 15px; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Sistema de Gestión de Inventario</h1>
+    <p>Aplicación para registrar y consultar productos.</p>
+
+    <h2>Registrar producto</h2>
+    <form id="formulario">
+        <div class="formulario">
+            <input id="nombre" placeholder="Nombre del producto" required>
+            <input id="precio" type="number" min="0.01" step="0.01"
+                   placeholder="Precio" required>
+            <input id="cantidad" type="number" min="0" step="1"
+                   placeholder="Cantidad" required>
+        </div>
+        <p><button type="submit">Guardar producto</button></p>
+    </form>
+
+    <div id="mensaje" class="mensaje" role="status"></div>
+
+    <h2>Consultar inventario</h2>
+    <input class="busqueda" id="buscar"
+           placeholder="Buscar producto por nombre">
+
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+        <tbody id="lista"></tbody>
+    </table>
+    <p id="total"></p>
+</div>
+
+<script>
+const formulario = document.getElementById("formulario");
+const nombre = document.getElementById("nombre");
+const precio = document.getElementById("precio");
+const cantidad = document.getElementById("cantidad");
+const mensaje = document.getElementById("mensaje");
+const lista = document.getElementById("lista");
+const buscar = document.getElementById("buscar");
+const total = document.getElementById("total");
+
+let productos = JSON.parse(localStorage.getItem("inventario")) || [];
+
+function mostrarProductos() {
+    lista.innerHTML = "";
+    const filtro = buscar.value.trim().toLowerCase();
+
+    const encontrados = productos.filter(p =>
+        p.nombre.toLowerCase().includes(filtro)
+    );
+
+    encontrados.forEach(p => {
+        const fila = document.createElement("tr");
+        [p.nombre, "$" + p.precio.toFixed(2), p.cantidad]
+            .forEach(valor => {
+                const celda = document.createElement("td");
+                celda.textContent = valor;
+                fila.appendChild(celda);
+            });
+        lista.appendChild(fila);
+    });
+
+    total.textContent =
+        "Productos registrados: " + productos.length;
+}
+
+formulario.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const nombreValor = nombre.value.trim();
+    const precioValor = Number(precio.value);
+    const cantidadValor = Number(cantidad.value);
+
+    if (!nombreValor || !precio.value || !cantidad.value) {
+        mensaje.textContent = "Error: complete todos los campos.";
+        mensaje.style.color = "red";
+        return;
+    }
+
+    if (!Number.isFinite(precioValor) || precioValor <= 0 ||
+        !Number.isInteger(cantidadValor) || cantidadValor < 0) {
+        mensaje.textContent = "Error: revise el precio y la cantidad.";
+        mensaje.style.color = "red";
+        return;
+    }
+
+    productos.push({
+        nombre: nombreValor,
+        precio: precioValor,
+        cantidad: cantidadValor
+    });
+
+    localStorage.setItem("inventario", JSON.stringify(productos));
+
+    mensaje.textContent = "Producto registrado correctamente.";
+    mensaje.style.color = "green";
+
+    formulario.reset();
+    mostrarProductos();
+});
+
+buscar.addEventListener("input", mostrarProductos);
+
+mostrarProductos();
+</script>
+</body>
+</html>
